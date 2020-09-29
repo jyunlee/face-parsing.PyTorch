@@ -15,7 +15,6 @@ import cv2
 from transform import *
 
 
-
 class FaceMask(Dataset):
     def __init__(self, rootpth, cropsize=(640, 480), mode='train', *args, **kwargs):
         super(FaceMask, self).__init__(*args, **kwargs)
@@ -44,7 +43,7 @@ class FaceMask(Dataset):
     def __getitem__(self, idx):
         impth = self.imgs[idx]
         img = Image.open(osp.join(self.rootpth, 'CelebA-HQ-img', impth))
-        img = img.resize((512, 512), Image.BILINEAR)
+        img = img.resize((512, 512), Image.BILINEAR) # to be changed
         label = Image.open(osp.join(self.rootpth, 'mask', impth[:-3]+'png')).convert('P')
         # print(np.unique(np.array(label)))
         if self.mode == 'train':

@@ -68,6 +68,12 @@ def evaluate(respth='./res/test_res', dspth='./data', cp='model_final_diss.pth')
     net.load_state_dict(torch.load(save_pth))
     net.eval()
 
+    no_iter = str(int(cp.split('_')[0])+1)
+    respth = os.path.join(respth, no_iter)
+
+    if not os.path.exists(respth):
+        os.makedirs(respth)
+
     to_tensor = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
