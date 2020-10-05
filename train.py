@@ -24,7 +24,7 @@ import datetime
 import argparse
 
 
-respth = './res'
+respth = './res/exp'
 if not osp.exists(respth):
     os.makedirs(respth)
 logger = logging.getLogger()
@@ -63,7 +63,7 @@ def train():
     sampler = torch.utils.data.distributed.DistributedSampler(ds)
     dl = DataLoader(ds,
                     batch_size = n_img_per_gpu,
-                    shuffle = False, # to be changed?
+                    shuffle = False,
                     sampler = sampler,
                     num_workers = n_workers,
                     pin_memory = True,
@@ -105,6 +105,7 @@ def train():
     ## train loop
     msg_iter = 50
     loss_avg = []
+    print_loss_avg = []
     st = glob_st = time.time()
     diter = iter(dl)
     epoch = 0
@@ -133,6 +134,7 @@ def train():
         optim.step()
 
         loss_avg.append(loss.item())
+        print_loss_avg.append(loss.item())
 
         #  print training log message
         if (it+1) % msg_iter == 0:
@@ -160,11 +162,14 @@ def train():
             loss_avg = []
             st = ed
         if dist.get_rank() == 0:
-            if (it+1) % 5000 == 0:
+            if (it+1) % 100 == 0:
                 state = net.module.state_dict() if hasattr(net, 'module') else net.state_dict()
                 if dist.get_rank() == 0:
                     torch.save(state, './res/cp/{}_iter.pth'.format(it+1))
-                evaluate(dspth='/home/jihyun/face_parsing/CelebAMask-HQ/eval-img/visualize', cp='{}_iter.pth'.format(it))
+                    print_loss_avg = sum(print_loss_avg) / len(print_loss_avg)
+                    print('train loss: ' + print_loss_avg)
+                    print_loss_avg = []
+                evaluate(dspth='/home/jihyun/face_parsing/CelebAMask-HQ/eval-img/visualize', cp='{}_iter.pth'.format(it+1))
 
     #  dump the final model
     save_pth = osp.join(respth, 'model_final_diss.pth')

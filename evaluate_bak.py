@@ -4,7 +4,6 @@
 from logger import setup_logger
 from model import BiSeNet
 from face_dataset import FaceMask
-from loss import OhemCELoss
 
 import torch
 import torch.nn as nn
@@ -80,40 +79,7 @@ def evaluate(respth='./res/test_res', dspth='./data', cp='model_final_diss.pth')
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
 
-    ''' added '''
-    cropsize = [448, 448]
-
-    data_root = '/home/jihyun/face_parsing/CelebAMask-HQ/'
-    ds = FaceMask(data_root, cropsize=cropsize, mode='val')
-    dl = DataLoader(ds, batch_size=16, shuffle=False, drop_last=False)
-
-    n_min = n_img_per_gpu * cropsize[0] * cropsize[1] // 16
-    score_thres = 0.7
-    ignore_idx = -100
-
-    loss_avg = []
-    lossP = OhemCELoss(thresh=score_thres, n_min=n_min, ignore_lb=ignore_idx)
-    loss2 = OhemCELoss(thresh=score_thres, n_min=n_min, ignore_lb=ignore_idx)
-    loss3 = OhemCELoss(thresh=score_thres, n_min=n_min, ignore_lb=ignore_idx)
-
     with torch.no_grad():
-        for i, sample in enumerate(dl):
-            im, lb = sample
-            im = im.cuda()
-            lb = lb.cuda()
-            lb = torch.squeeze(lb, 1)
-            out, out16, out32 = net(img)
-            lossp = LossP(out, lb)
-            loss2 = loss2(out16, lb)
-            loss3 = Loss3(out32, lb)
-            loss = lossp + loss2 + loss3
-
-            loss_avg.append(loss.item())
-        
-        loss_avg = sum(loss_avg) / len(loss_avg)
-        print('eval loss: ' + loss_avg)
-
-        '''
         for image_path in os.listdir(dspth):
             img = Image.open(osp.join(dspth, image_path))
             image = img.resize((512, 512), Image.BILINEAR)
@@ -127,7 +93,7 @@ def evaluate(respth='./res/test_res', dspth='./data', cp='model_final_diss.pth')
 
 
             vis_parsing_maps(image, parsing, stride=1, save_im=True, save_path=osp.join(respth, image_path))
-        '''
+
 
 if __name__ == "__main__":
     setup_logger('./res')

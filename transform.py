@@ -31,7 +31,6 @@ class RandomCrop(object):
                 lb = lb.crop(crop)
                     )
 
-
 class HorizontalFlip(object):
     def __init__(self, p=0.5, *args, **kwargs):
         self.p = p

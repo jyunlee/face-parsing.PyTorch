@@ -22,8 +22,16 @@ class FaceMask(Dataset):
         self.mode = mode
         self.ignore_lb = 255
         self.rootpth = rootpth
+        self.modepth = ''
 
-        self.imgs = os.listdir(os.path.join(self.rootpth, 'CelebA-HQ-img'))
+        if self.mode == 'train':
+            self.modepth = 'CelebA-HQ-img'
+        elif self.mode == 'val':
+            self.modepth = 'eval-img'
+        else:
+            self.modepth = 'test-img'
+
+        self.imgs = os.listdir(os.path.join(self.rootpth, self.modepth))
 
         #  pre-processing
         self.to_tensor = transforms.Compose([
@@ -39,10 +47,11 @@ class FaceMask(Dataset):
             RandomScale((0.75, 1.0, 1.25, 1.5, 1.75, 2.0)),
             RandomCrop(cropsize)
             ])
+        self.trans_val = transforms.CenterCrop(cropsize)
 
     def __getitem__(self, idx):
         impth = self.imgs[idx]
-        img = Image.open(osp.join(self.rootpth, 'CelebA-HQ-img', impth))
+        img = Image.open(osp.join(self.rootpth, self.modepth, impth))
         img = img.resize((512, 512), Image.BILINEAR) # to be changed
         label = Image.open(osp.join(self.rootpth, 'mask', impth[:-3]+'png')).convert('P')
         # print(np.unique(np.array(label)))
@@ -50,6 +59,11 @@ class FaceMask(Dataset):
             im_lb = dict(im=img, lb=label)
             im_lb = self.trans_train(im_lb)
             img, label = im_lb['im'], im_lb['lb']
+
+        elif self.mode == 'val':
+            img = trans_val(img)
+            label = trans_val(label)
+
         img = self.to_tensor(img)
         label = np.array(label).astype(np.int64)[np.newaxis, :]
         return img, label
