@@ -61,8 +61,8 @@ class FaceMask(Dataset):
             img, label = im_lb['im'], im_lb['lb']
 
         elif self.mode == 'val':
-            img = trans_val(img)
-            label = trans_val(label)
+            img = self.trans_val(img)
+            label = self.trans_val(label)
 
         img = self.to_tensor(img)
         label = np.array(label).astype(np.int64)[np.newaxis, :]

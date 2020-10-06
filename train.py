@@ -26,7 +26,10 @@ import argparse
 
 respth = './res/exp'
 if not osp.exists(respth):
-    os.makedirs(respth)
+    os.makedirs(respth, exist_ok=True)
+if not osp.exists(osp.join(respth, 'cp')):
+    os.makedirs(osp.join(respth, 'cp'), exist_ok=True)
+
 logger = logging.getLogger()
 
 
@@ -57,7 +60,7 @@ def train():
     n_img_per_gpu = 16
     n_workers = 8
     cropsize = [448, 448] # to be changed
-    data_root = '/home/jihyun/face_parsing/CelebAMask-HQ/'
+    data_root = '/home/jihyun/workspace/face_parsing/dataset/CelebAMask-HQ/'
 
     ds = FaceMask(data_root, cropsize=cropsize, mode='train')
     sampler = torch.utils.data.distributed.DistributedSampler(ds)
@@ -162,14 +165,18 @@ def train():
             loss_avg = []
             st = ed
         if dist.get_rank() == 0:
-            if (it+1) % 100 == 0:
+            if (it+1) % 5000 == 0:
                 state = net.module.state_dict() if hasattr(net, 'module') else net.state_dict()
                 if dist.get_rank() == 0:
-                    torch.save(state, './res/cp/{}_iter.pth'.format(it+1))
+                    torch.save(state, respth+'/cp/{}_iter.pth'.format(it+1))
                     print_loss_avg = sum(print_loss_avg) / len(print_loss_avg)
-                    print('train loss: ' + print_loss_avg)
+
+                    f = open(osp.join(respth, 'loss.log'), 'a+')
+                    f.write(str(it+1) + ' train_loss: ' + str(print_loss_avg))
+                    f.close()
+
                     print_loss_avg = []
-                evaluate(dspth='/home/jihyun/face_parsing/CelebAMask-HQ/eval-img/visualize', cp='{}_iter.pth'.format(it+1))
+                evaluate(dspth='/home/jihyun/workspace/face_parsing/dataset/CelebAMask-HQ/eval-visualize', respth=respth, cp='{}_iter.pth'.format(it+1))
 
     #  dump the final model
     save_pth = osp.join(respth, 'model_final_diss.pth')
