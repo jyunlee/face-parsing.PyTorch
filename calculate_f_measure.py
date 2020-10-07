@@ -32,7 +32,7 @@ if __name__ == '__main__':
             net.load_state_dict(torch.load(os.path.join(model_dir, 'cp', filename)))
 
             total_f_score = []
-            class_f_score = []
+            class_f_score = [[] for i in range(n_classes)]
 
             with torch.no_grad():
                         
@@ -53,8 +53,13 @@ if __name__ == '__main__':
                         lb = lb.reshape(-1).cpu().numpy()
 
                         total_f_score.append(f1_score(lb, pred, average='weighted'))
-                        class_f_score.append(f1_score(lb, pred, average=None))
 
+                        for c in range(n_classes):
+                            c_pred = pred == c
+                            c_lb = lb == c
+                            class_f_score[c].append(f1_score(c_lb, c_pred, average='binary'))
+                            print(class_f_score[c])
+                        
                         '''
                         # f-measure implementation
                         fs = []
@@ -73,9 +78,16 @@ if __name__ == '__main__':
 
                         print(sum(fs) / (n_img_per_gpu * cropsize[0] * cropsize[1]))
                         '''
-                    print(total_f_score)
+
+                    f.write(filename + ' | ')
+                    f.write('total: ' + str(sum(total_f_score) / len(total_f_score)) + ' | ')
+
                     # range()로 인덱싱하기
-                    print(class_f_score)
+                    for c in range(n_classes):
+                        score = np.take(class_f_score, np.arange(c, len(class_f_score), n_classes))
+                        print(np.arange(c, len(class_f_score), n_classes))
+
+                    print(len(class_f_score))
 
             f.close()
 
